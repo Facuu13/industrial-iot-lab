@@ -2,8 +2,9 @@ import time
 import paho.mqtt.client as mqtt
 import json
 
-client = mqtt.Client()
+client = mqtt.Client(client_id="sensor_sim")
 client.connect("localhost", 1883, 60)
+client.loop_start()
 
 TOPIC = "factory/line1/telemetry"
 
@@ -60,6 +61,8 @@ def main():
             elif cmd == "ft":
                 fault_temp = not fault_temp
             elif cmd == "q":
+                client.loop_stop()
+                client.disconnect()
                 break
 
 if __name__ == "__main__":
