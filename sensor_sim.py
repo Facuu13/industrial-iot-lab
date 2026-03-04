@@ -1,4 +1,11 @@
 import time
+import paho.mqtt.client as mqtt
+import json
+
+client = mqtt.Client()
+client.connect("localhost", 1883, 60)
+
+TOPIC = "factory/line1/telemetry"
 
 def main():
     motor_on = 0
@@ -36,6 +43,10 @@ def main():
 
         print(data)
         time.sleep(0.5)
+
+        #convertir data a json
+        payload = json.dumps(data)
+        client.publish(TOPIC, payload)
 
         slot = int(time.time()) // 5
         # cada ~5 segundos te pregunto si querés toggle motor
