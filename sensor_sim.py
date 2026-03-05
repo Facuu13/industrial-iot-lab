@@ -1,3 +1,4 @@
+import random
 import time
 import json
 import paho.mqtt.client as mqtt
@@ -95,20 +96,56 @@ def main():
             speed_ok = 1 if (motor_on and not fault_mech) else 0
             temp_ok = 0 if fault_temp else 1
 
+            # -------- Simulación velocidad --------
+
+            if motor_on == 0:
+                # motor apagado
+                speed_rpm = max(0, random.gauss(0, 5))
+
+            elif motor_on == 1 and not fault_mech:
+                # motor funcionando normal
+                speed_rpm = max(0, random.gauss(1200, 60))
+
+            else:
+                # falla mecánica
+                speed_rpm = max(0, random.gauss(60, 25))
+
+
+            # -------- Simulación temperatura --------
+
+            if fault_temp:
+                # sobretemperatura
+                temp_c = random.gauss(85, 2)
+
+            else:
+                base_temp = 45
+                if motor_on:
+                    base_temp += 8  # motor encendido calienta un poco
+
+                temp_c = random.gauss(base_temp, 2)
+
+
+            # -------- Flags digitales --------
+
+            speed_ok = 1 if speed_rpm > 200 else 0
+            temp_ok = 1 if temp_c < 80 else 0
+
             data = {
                 "ts": round(time.time(), 3),
                 "motor_on": motor_on,
+                "speed_rpm": round(speed_rpm, 1),
+                "temp_c": round(temp_c, 1),
                 "speed_ok": speed_ok,
                 "temp_ok": temp_ok,
                 "fault_mech": fault_mech,
-                "fault_temp": fault_temp,
+                "fault_temp": fault_temp
             }
 
             payload = json.dumps(data)
             client.publish(TOPIC_TELEMETRY, payload, qos=0, retain=False)
 
             print(data)
-            time.sleep(0.5)
+            time.sleep(4)
 
     except KeyboardInterrupt:
         print("\n[EXIT] Ctrl+C")
